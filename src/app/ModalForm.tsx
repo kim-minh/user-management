@@ -1,12 +1,13 @@
 import {Button, Select, Form, Input, Modal, Row, Col, Space } from 'antd';
 import { useState } from 'react';
-import { Users } from './data';
+import { Users, City, Job } from './DataInterface';
 import FormItem from 'antd/es/form/FormItem';
 
 const {Option} = Select;
 
 interface CollectionCreateFormProps {
     open: boolean;
+    options: any;
     onCreate: (values: Users) => void;
     onCancel: () => void;
   }
@@ -15,6 +16,7 @@ const CollectionCreateForm: React.FC<CollectionCreateFormProps> = ({
     open,
     onCreate,
     onCancel,
+    options
   }) => {
     const [form] = Form.useForm();
 
@@ -89,12 +91,26 @@ const CollectionCreateForm: React.FC<CollectionCreateFormProps> = ({
         <Form.Item
             name="jobType" 
             label="Job">
-            <Input type="text" />
+            <Select
+              placeholder="Select an option"
+              allowClear
+            >
+              {options.jobOptions.map((option: Job) => (
+                <Option key={option.id} value={option.jobType}>{option.jobType}</Option>
+              ))}
+            </Select>
           </Form.Item>
           <Form.Item
             name="city" 
             label="City">
-            <Input type="text" />
+            <Select
+              placeholder="Select an option"
+              allowClear
+            >
+              {options.cityOptions.map((option: City) => (
+                <Option key={option.id} value={option.cityName}>{option.cityName}</Option>
+              ))}
+            </Select>
           </Form.Item>
           </Col>
           </Space>
@@ -105,11 +121,12 @@ const CollectionCreateForm: React.FC<CollectionCreateFormProps> = ({
 };
 
 interface ModalFormProp {
-  data: any;
-  onShow: (data: any) => void;
+  data: any,
+  options: any,
+  onShow: (data: any) => void,
 }
 
-const ModalForm: React.FC<ModalFormProp> = ({data, onShow}) => {
+const ModalForm: React.FC<ModalFormProp> = ({data, options, onShow}) => {
     const [open, setOpen] = useState(false);
 
     const normalizeValue =  (values: any) => {
@@ -155,6 +172,7 @@ const ModalForm: React.FC<ModalFormProp> = ({data, onShow}) => {
             </Button>
             <CollectionCreateForm
                 open={open}
+                options={options}
                 onCreate={onCreate}
                 onCancel={() => {
                 setOpen(false);

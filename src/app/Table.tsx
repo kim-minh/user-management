@@ -1,28 +1,9 @@
-import { Form, Input, InputNumber, Popconfirm, Table, Typography } from 'antd';
+import { Form, Input, InputNumber, Popconfirm, Table, Typography, Select } from 'antd';
 import { useState } from 'react';
+import { Users, Job, City } from './DataInterface';
+import Image from 'next/image';
 
-export interface Users {
-    id: number;
-    email: string;
-    fullName: string;
-    phoneNumber: string;
-    status: number;
-    address: string;
-    avatar: string;
-    gender: string;
-    jobTypeId: number;
-    jobType: {
-        id: number;
-        jobType: string;
-    };
-    cityId: number;
-    city: {
-        id: number;
-        cityName: string;
-    };
-    updatedAt: Date;
-    createdAt: Date;
-}
+const { Option } = Select;
 
 interface EditableCellProps extends React.HTMLAttributes<HTMLElement> {
   editing: boolean;
@@ -69,18 +50,24 @@ const EditableCell: React.FC<EditableCellProps> = ({
 };
 
 interface EditableTableProps {
-  originData: Users[];
-  onShow: (data: any) => void;
+  originData: Users[],
+  options: any,
+  onShow: (data: any) => void,
 }
 
-export const EditableTable: React.FC<EditableTableProps> = ({originData, onShow}) => {
+export const EditableTable: React.FC<EditableTableProps> = ({originData, options, onShow}) => {
   const [form] = Form.useForm();
   const [editingKey, setEditingKey] = useState(-1);
+
+  // const handleStatusChange = (value, key) => {
+  //   // Handle the status change here
+  //   console.log(`Status changed to ${value} for record with key ${key}`);
+  // };
 
   const isEditing = (record: Users) => record.id === editingKey;
 
   const edit = (record: Partial<Users> & { id: React.Key }) => {
-    form.setFieldsValue({ fullName: '', email: '', phoneNumber: '', address: '', avatar: '', job: '', city: '', ...record });
+    form.setFieldsValue({ fullName: '', email: '', phoneNumber: '', gender: '', address: '', avatar: '', job: '', city: '', ...record });
     setEditingKey(record.id);
   };
 
@@ -137,24 +124,52 @@ export const EditableTable: React.FC<EditableTableProps> = ({originData, onShow}
     dataIndex: 'avatar',
     key: 'avatar',
     editable: true,
-    render: (avatar: string) => <img src={avatar} alt='avatar' />
+    render: (avatar: string) => <Image width={100} height={100} src={avatar} alt='avatar'/>
   }, {
     title: 'Gender',
     dataIndex: 'gender',
     key: 'gender',
-    editable: true,
+    render: (gender: string) => editingKey === -1 ? `${gender}` : (
+      <Select
+        defaultValue={gender}
+        style={{ width: 120 }}
+        //onChange={(value) => handleStatusChange(value, record)}
+      >
+        <Option value="Active">male</Option>
+        <Option value="Inactive">female</Option>
+        <Option value="Other">other</Option>
+      </Select>
+    )
   }, {
     title: 'Job',
     dataIndex: 'jobType',
     key: 'jobType',
-    editable: true,
-    render: (jobType: any) => `${jobType.jobType}`,
+    render: (jobType: any) => editingKey === -1 ? `${jobType.jobType}` : (
+      <Select
+        defaultValue={jobType.jobType}
+        style={{ width: 120 }}
+        //onChange={(value) => handleStatusChange(value, record)}
+      >
+        {options.jobOptions.map((option: Job) => (
+          <Option key={option.id} value={option.jobType}>{option.jobType}</Option>
+        ))}
+      </Select>
+    )
   }, {
     title: 'City',
     dataIndex: 'city',
     key: 'city',
-    editable: true,
-    render: (city: any) => `${city.cityName}`,
+    render: (city: any) => editingKey === -1 ? `${city.cityName}` : (
+      <Select
+        defaultValue={city.cityName}
+        style={{ width: 120 }}
+        //onChange={(value) => handleStatusChange(value, record)}
+      >
+        {options.cityOptions.map((option: City) => (
+          <Option key={option.id} value={option.cityName}>{option.cityName}</Option>
+        ))}
+      </Select>
+    ),
   }, {
     title: 'Updated At',
     dataIndex: 'updatedAt',
@@ -194,7 +209,7 @@ export const EditableTable: React.FC<EditableTableProps> = ({originData, onShow}
       ...col,
       onCell: (record: Users) => ({
         record,
-        inputType: col.dataIndex === 'age' ? 'number' : 'text',
+        inputType: col.dataIndex === 'phoneNumber' ? 'number' : 'text',
         dataIndex: col.dataIndex,
         title: col.title,
         editing: isEditing(record),

@@ -1,123 +1,56 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import './index.css';
-import { Space, Table, Tag } from 'antd';
-import type { ColumnsType } from 'antd/es/table';
 import axios from 'axios';
+import { Users, EditableTable } from './data';
+import ModalForm from './ModalForm';
 
-interface Users {
-  id: number;
-  email: string;
-  fullName: string;
-  phoneNumber: string;
-  status: number;
-  address: string;
-  avatar: string;
-  gender: string;
-  jobTypeId: number;
-  jobType: Job;
-  cityId: number;
-  city: City;
-  updatedAt: Date;
-  createdAt: Date;
-}
+import { Layout, theme } from 'antd';
+import { Header, Footer } from 'antd/es/layout/layout';
 
-interface Job {
-  id: number;
-  jobType: string;
-}
-
-interface City {
-  id: number;
-  jobType: string;
-}
-
-axios.get('https://mock-api.dev.apps.xplat.fis.com.vn/users')
-  .then((response) => {
-    const data : Users[] = response.data;
-    console.log(data);
-  });
-
-interface DataType {
-  key: string;
-  name: string;
-  age: number;
-  address: string;
-  tags: string[];
-}
-
+const { Content } = Layout;
 
 const App: React.FC = () => {
- 
-const columns: ColumnsType<DataType> = [
-  {
-    title: 'Name',
-    dataIndex: 'name',
-    key: 'name',
-    render: (text) => <a>{text}</a>,
-  },
-  {
-    title: 'Age',
-    dataIndex: 'age',
-    key: 'age',
-  },
-  {
-    title: 'Address',
-    dataIndex: 'address',
-    key: 'address',
-  },
-  {
-    title: 'Tags',
-    key: 'tags',
-    dataIndex: 'tags',
-    render: (_, { tags }) => (
-      <>
-        {tags.map((tag) => {
-          let color = tag.length > 5 ? 'geekblue' : 'green';
-          if (tag === 'loser') {
-            color = 'volcano';
-          }
-          return (
-            <Tag color={color} key={tag}>
-              {tag.toUpperCase()}
-            </Tag>
-          );
-        })}
-      </>
-    ),
-  },
-  {
-    title: 'Action',
-    key: 'action',
-    render: (_, record) => (
-      <Space size="middle">
-        <a>Invite {record.name}</a>
-        <a>Delete</a>
-      </Space>
-    ),
-  },
-];
-  const data: DataType[] = [
-    {
-      key: '1',
-      name: 'John Brown',
-      age: 32,
-      address: 'New York No. 1 Lake Park',
-      tags: ['nice', 'developer'],
-    },
-    {
-      key: '2',
-      name: 'Jim Green',
-      age: 42,
-      address: 'London No. 1 Lake Park',
-      tags: ['loser'],
-    },
-    {
-      key: '3',
-      name: 'Joe Black',
-      age: 32,
-      address: 'Sydney No. 1 Lake Park',
-      tags: ['cool', 'teacher'],
-    },
-  ];
-  return <Table columns={columns} dataSource={data} />
-};
+  const {token: { colorBgContainer },
+  } = theme.useToken();
+  const [data, setData] = useState<Users[]>([]);
+
+  
+  const fetchData = async() => {
+    const response = await axios.get('https://mock-api.dev.apps.xplat.fis.com.vn/users');
+    setData(response.data);
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  return (
+    <Layout hasSider>
+      {/* <Sider
+        style={{
+          overflow: 'auto',
+          height: '100vh',
+          position: 'fixed',
+          left: 0,
+          top: 0,
+          bottom: 0,
+        }}
+      >
+        <div className="demo-logo-vertical" />
+        style={{ marginLeft: 200 }}
+      </Sider> */}
+      <Layout className="site-layout">
+        <Header style={{ padding: 0, background: colorBgContainer }}> <ModalForm data={data} onShow = {setData} /></Header>
+        <Content style={{ margin: '24px 16px 0', overflow: 'initial' }}>
+          <div style={{ padding: 24, textAlign: 'center', background: colorBgContainer }}>
+            <EditableTable originData={data} onShow={setData}></EditableTable>
+          </div>
+        </Content>
+        <Footer style={{ textAlign: 'center' }}>Ant Design ©2023 Created by Ant UED</Footer>
+      </Layout>
+    </Layout>
+  );
+  
+}
+
+export default App;

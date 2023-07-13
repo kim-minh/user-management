@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react';
-import { EditableTable } from './Table';
+import EditableTable from './Table';
 import ModalForm from './ModalForm';
 import { Layout, theme } from 'antd';
 import { Header, Footer } from 'antd/es/layout/layout';
@@ -24,12 +24,16 @@ const App: React.FC = () => {
     return res.json()
   }
 
+  const getUsers = async () => {
+    const userResponse = await getData('https://mock-api.dev.apps.xplat.fis.com.vn/users');
+    setUserData(userResponse);
+  }
+
   useEffect(() => {
     const fetchData = async () => {
       const cityResponse = await getData('https://mock-api.dev.apps.xplat.fis.com.vn/cities');
       const jobResponse = await getData ('https://mock-api.dev.apps.xplat.fis.com.vn/jobTypes');
-      const userResponse = await getData('https://mock-api.dev.apps.xplat.fis.com.vn/users');
-      setUserData(userResponse);
+      await getUsers()
       setCityOptions(cityResponse);
       setJobOptions(jobResponse);
     }
@@ -41,7 +45,7 @@ const App: React.FC = () => {
         <Header style={{ padding: 0, background: colorBgContainer }}> <ModalForm data={userData} options={optionData} onShow = {setUserData} /></Header>
         <Content style={{ margin: '24px 16px 0', overflow: 'initial' }}>
           <div style={{ padding: 24, textAlign: 'center', background: colorBgContainer }}>
-            <EditableTable originData={userData} options={optionData} onShow={setUserData}></EditableTable>
+            <EditableTable originData={userData} options={optionData} setData={setUserData} reloadPage={getUsers}></EditableTable>
           </div>
         </Content>
         <Footer style={{ textAlign: 'center' }}>Ant Design ©2023 Created by Ant UED</Footer>

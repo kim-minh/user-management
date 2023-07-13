@@ -1,7 +1,6 @@
-import { Form, Input, InputNumber, Popconfirm, Table, Typography, Select } from 'antd';
+import { Image, Form, Input, InputNumber, Popconfirm, Table, Typography, Select } from 'antd';
 import { useState } from 'react';
 import { Users, Job, City } from './DataInterface';
-import Image from 'next/image';
 
 const { Option } = Select;
 
@@ -25,7 +24,7 @@ const EditableCell: React.FC<EditableCellProps> = ({
   children,
   ...restProps
 }) => {
-  const inputNode = inputType === 'number' ? <InputNumber /> : <Input />;
+  const inputNode = inputType === 'number' ? <InputNumber style={{width: 120}} /> : <Input.TextArea style={{width: 120}} autoSize/>;
 
   return (
     <td {...restProps}>
@@ -52,17 +51,13 @@ const EditableCell: React.FC<EditableCellProps> = ({
 interface EditableTableProps {
   originData: Users[],
   options: any,
-  onShow: (data: any) => void,
+  setData: (data: any) => void,
+  reloadPage: () => void,
 }
 
-export const EditableTable: React.FC<EditableTableProps> = ({originData, options, onShow}) => {
+const EditableTable: React.FC<EditableTableProps> = ({originData, options, setData, reloadPage}) => {
   const [form] = Form.useForm();
   const [editingKey, setEditingKey] = useState(-1);
-
-  // const handleStatusChange = (value, key) => {
-  //   // Handle the status change here
-  //   console.log(`Status changed to ${value} for record with key ${key}`);
-  // };
 
   const isEditing = (record: Users) => record.id === editingKey;
 
@@ -71,29 +66,74 @@ export const EditableTable: React.FC<EditableTableProps> = ({originData, options
     setEditingKey(record.id);
   };
 
+  const deleteRow = (key: React.Key) => {
+    const newData = originData.filter((item) => item.id !== key);
+    setData(newData);
+    setEditingKey(-1);
+  }
+
   const cancel = () => {
     setEditingKey(-1);
   };
 
+  const updateUser = async(id: number, data: any) => {
+    const res = await fetch(`https://mock-api.dev.apps.xplat.fis.com.vn/users/${id}`, {
+      method: 'PATCH',
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    })
+
+    if (!res.ok) {
+      throw new Error('Failed to fetch data')
+    }
+    return res.json()
+  }
+
   const save = async (key: React.Key) => {
     try {
-      const row = (await form.validateFields()) as Users;
-
+      const row = (await form.validateFields()) as any;
       const newData = [...originData];
-      const index = newData.findIndex((item) => key === item.id);
+      const index = originData.findIndex((item) => key === item.id);
+
       if (index > -1) {
+        if (row.cityId.value !== undefined) {
+          row.city = {
+            id: row.cityId.value,
+            cityName: row.cityId.label
+          };
+          row.cityId = row.cityId.value;
+        }
+        
+        if (row.jobTypeId.value !== undefined) {
+          row.jobType = {
+            id: row.jobTypeId.value,
+            jobType: row.jobTypeId.label
+          }
+          row.jobTypeId = row.jobTypeId.value;
+        }
+
+        if (row.gender.value !== undefined) {
+          row.gender = row.gender.value;
+        }
+
+        row.updatedAt = new Date().toISOString().substring(0, 10);
+
         const item = newData[index];
         newData.splice(index, 1, {
           ...item,
           ...row,
         });
-        onShow(newData);
-        setEditingKey(-1);
+        setData(newData);
+
+        //await updateUser(originData[index].id, row);
+        //reloadPage();
       } else {
-        newData.push(row);
-        onShow(newData);
-        setEditingKey(-1);
+        
       }
+
+      setEditingKey(-1);
     } catch (errInfo) {
       console.log('Validate Failed:', errInfo);
     }
@@ -124,51 +164,54 @@ export const EditableTable: React.FC<EditableTableProps> = ({originData, options
     dataIndex: 'avatar',
     key: 'avatar',
     editable: true,
-    render: (avatar: string) => <Image width={100} height={100} src={avatar} alt='avatar'/>
+    render: (avatar: string) => <Image src={avatar} alt='avatar' />
   }, {
     title: 'Gender',
     dataIndex: 'gender',
     key: 'gender',
-    render: (gender: string) => editingKey === -1 ? `${gender}` : (
-      <Select
-        defaultValue={gender}
-        style={{ width: 120 }}
-        //onChange={(value) => handleStatusChange(value, record)}
-      >
-        <Option value="Active">male</Option>
-        <Option value="Inactive">female</Option>
-        <Option value="Other">other</Option>
-      </Select>
+    render: (gender: string, _: any, index: number) => editingKey !== index+1 ? `${gender}` : (
+      <Form.Item name='gender' initialValue={gender} noStyle>
+        <Select
+          style={{ width: 100 }}
+        >
+          <Option value="male">male</Option>
+          <Option value="female">female</Option>
+          <Option value="other">other</Option>
+        </Select>
+      </Form.Item>
     )
   }, {
     title: 'Job',
     dataIndex: 'jobType',
     key: 'jobType',
-    render: (jobType: any) => editingKey === -1 ? `${jobType.jobType}` : (
-      <Select
-        defaultValue={jobType.jobType}
-        style={{ width: 120 }}
-        //onChange={(value) => handleStatusChange(value, record)}
-      >
-        {options.jobOptions.map((option: Job) => (
-          <Option key={option.id} value={option.jobType}>{option.jobType}</Option>
-        ))}
-      </Select>
+    render: (jobType: any, _: any, index: number) => editingKey !== index+1 ? `${jobType.jobType}` : (
+      <Form.Item name="jobTypeId" initialValue={jobType.id} noStyle>
+        <Select
+          labelInValue
+          style={{ width: 120 }}
+        >
+          {options.jobOptions.map((option: Job) => (
+            <Option key={option.id} value={option.id}>{option.jobType}</Option>
+          ))}
+        </Select>
+      </Form.Item>
     )
   }, {
     title: 'City',
     dataIndex: 'city',
     key: 'city',
-    render: (city: any) => editingKey === -1 ? `${city.cityName}` : (
-      <Select
-        defaultValue={city.cityName}
-        style={{ width: 120 }}
-        //onChange={(value) => handleStatusChange(value, record)}
-      >
-        {options.cityOptions.map((option: City) => (
-          <Option key={option.id} value={option.cityName}>{option.cityName}</Option>
-        ))}
-      </Select>
+    render: (city: any, _: any, index: number) => editingKey !== index+1 ? `${city.cityName}` : (
+      <Form.Item name="cityId" initialValue={city.cityId} noStyle>
+        <Select
+          labelInValue
+          style={{ width: 120 }}
+        >
+          {options.cityOptions.map((option: City) => (
+            <Option key={option.id} value={option.id}>{option.cityName}</Option>
+          ))}
+        </Select>
+      </Form.Item>
+
     ),
   }, {
     title: 'Updated At',
@@ -188,8 +231,10 @@ export const EditableTable: React.FC<EditableTableProps> = ({originData, options
           <Typography.Link onClick={() => save(record.id)} style={{ marginRight: 8 }}>
             Save
           </Typography.Link>
+          <Popconfirm title="Sure to delete?" onConfirm={() => deleteRow(record.id)}>
+            <a>Delete</a>
+          </Popconfirm>
           <Popconfirm title="Sure to cancel?" onConfirm={cancel}>
-          {/* eslint-disable-next-line */}
             <a>Cancel</a>
           </Popconfirm>
         </span>
@@ -229,6 +274,7 @@ export const EditableTable: React.FC<EditableTableProps> = ({originData, options
         bordered
         dataSource={originData}
         columns={mergedColumns}
+        scroll={{ x: 1300 }}
         rowClassName="editable-row"
         pagination={{
           onChange: cancel,
@@ -237,3 +283,5 @@ export const EditableTable: React.FC<EditableTableProps> = ({originData, options
     </Form>
   );
 };
+
+export default EditableTable;

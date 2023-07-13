@@ -64,7 +64,7 @@ const CollectionCreateForm: React.FC<CollectionCreateFormProps> = ({
           name="phoneNumber" 
           label="Phone"
           rules={[{ required: true, message: 'Please input your phone number!' }]}>
-            <Input type="phone" />
+            <Input type="tel" />
           </Form.Item>
           <Form.Item
             name="address" 
@@ -76,7 +76,7 @@ const CollectionCreateForm: React.FC<CollectionCreateFormProps> = ({
           <FormItem
            name="avatar"
            label="Avatar" >
-            <Input type="link" />
+            <Input type="url" />
           </FormItem>
           <Form.Item name="gender" label="Gender" rules={[{ required: true }]}>
           <Select
@@ -93,6 +93,7 @@ const CollectionCreateForm: React.FC<CollectionCreateFormProps> = ({
             label="Job">
             <Select
               placeholder="Select an option"
+              labelInValue
               allowClear
             >
               {options.jobOptions.map((option: Job) => (
@@ -105,6 +106,7 @@ const CollectionCreateForm: React.FC<CollectionCreateFormProps> = ({
             label="City">
             <Select
               placeholder="Select an option"
+              labelInValue
               allowClear
             >
               {options.cityOptions.map((option: City) => (
@@ -135,29 +137,28 @@ const ModalForm: React.FC<ModalFormProp> = ({data, options, onShow}) => {
       values.updatedAt = currentDate;
       values.createdAt = currentDate;
 
-      const jobType = values.jobType;
-      const cityName = values.city;
-
-      values.jobType = {
-        id: 1,
-        jobType: jobType,
-      }
+      values.cityId = values.city.key;
       values.city = {
-        id: 1,
-        cityName: cityName,
+        id: values.city.key,
+        cityName: values.city.value,
       }
+
+      values.jobTypeId = values.jobType.key;
+      values.jobType = {
+        id: values.jobType.key,
+        jobType: values.jobType.value,
+      }
+
       for(const key in values) {
         return 'Not provided' ? values[key] === undefined : values[key];
       }
     }
 
     const onCreate = (values: any) => {
-        normalizeValue(values);
-        console.log(values);
-      
-        onShow([values, ...data]);
-        console.log("Received: ", data);
-        setOpen(false);
+      normalizeValue(values);
+      onShow([values, ...data]);
+      console.log("Received: ", values);
+      setOpen(false);
     };
 
     return (

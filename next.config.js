@@ -10,7 +10,7 @@ module.exports = {
           protocol: 'https',
           hostname: 'cloudflare-ipfs.com',
           port: '',
-          pathname: '/ipfs/**',
+          pathname: '/ipfs/Qmd3W5DuhgHirLHGVixi6V76LhCkZUz6pnFt5AJBiyvHye/avatar/**',
         },
       ],
     },

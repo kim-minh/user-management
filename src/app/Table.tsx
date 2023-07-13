@@ -1,6 +1,7 @@
-import { Image, Form, Input, InputNumber, Popconfirm, Table, Typography, Select } from 'antd';
+import { Form, Input, InputNumber, Popconfirm, Table, Typography, Select } from 'antd';
 import { useState } from 'react';
 import { Users, Job, City } from './DataInterface';
+import Image from 'next/image';
 
 const { Option } = Select;
 
@@ -67,8 +68,10 @@ const EditableTable: React.FC<EditableTableProps> = ({originData, options, setDa
   };
 
   const deleteRow = (key: React.Key) => {
+    const index = originData.findIndex((item) => key === item.id);
     const newData = originData.filter((item) => item.id !== key);
     setData(newData);
+    deleteUser(index)
     setEditingKey(-1);
   }
 
@@ -83,6 +86,20 @@ const EditableTable: React.FC<EditableTableProps> = ({originData, options, setDa
         "Content-Type": "application/json",
       },
       body: JSON.stringify(data),
+    })
+
+    if (!res.ok) {
+      throw new Error('Failed to fetch data')
+    }
+    return res.json()
+  }
+
+  const deleteUser = async(id: number) => {
+    const res = await fetch(`https://mock-api.dev.apps.xplat.fis.com.vn/users/${id}`, {
+      method: 'DELETE',
+      headers: {
+        "Content-Type": "application/json",
+      },
     })
 
     if (!res.ok) {
@@ -127,7 +144,7 @@ const EditableTable: React.FC<EditableTableProps> = ({originData, options, setDa
         });
         setData(newData);
 
-        //await updateUser(originData[index].id, row);
+        await updateUser(originData[index].id, row);
         //reloadPage();
       } else {
         
@@ -164,7 +181,7 @@ const EditableTable: React.FC<EditableTableProps> = ({originData, options, setDa
     dataIndex: 'avatar',
     key: 'avatar',
     editable: true,
-    render: (avatar: string) => <Image src={avatar} alt='avatar' />
+    render: (avatar: string) => <Image width={100} height={100} src={avatar} alt='avatar' />
   }, {
     title: 'Gender',
     dataIndex: 'gender',

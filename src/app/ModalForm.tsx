@@ -128,14 +128,29 @@ interface ModalFormProp {
   onShow: (data: any) => void,
 }
 
+const createUser = async(data: Users) => {
+  const res = await fetch(`https://mock-api.dev.apps.xplat.fis.com.vn/users/`, {
+    method: 'POSt',
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  })
+
+  if (!res.ok) {
+    throw new Error('Failed to fetch data')
+  }
+  return res.json()
+}
+
 const ModalForm: React.FC<ModalFormProp> = ({data, options, onShow}) => {
     const [open, setOpen] = useState(false);
 
     const normalizeValue =  (values: any) => {
       const currentDate = new Date().toISOString().substring(0, 10);
       values.id = data.length + 1;
-      values.updatedAt = currentDate;
       values.createdAt = currentDate;
+      values.updatedAt = currentDate;
 
       values.cityId = values.city.key;
       values.city = {
@@ -154,10 +169,10 @@ const ModalForm: React.FC<ModalFormProp> = ({data, options, onShow}) => {
       }
     }
 
-    const onCreate = (values: any) => {
+    const onCreate = async (values: any) => {
       normalizeValue(values);
-      onShow([values, ...data]);
-      console.log("Received: ", values);
+      onShow([...data, values]);
+      await createUser(values); 
       setOpen(false);
     };
 

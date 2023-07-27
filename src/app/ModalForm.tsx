@@ -1,7 +1,8 @@
 import {Button, Select, Form, Input, Modal, Row, Col, Space } from 'antd';
-import { useState } from 'react';
+import { useContext, useState } from 'react';
 import { Users, City, Job } from './DataInterface';
 import FormItem from 'antd/es/form/FormItem';
+import { DataContext, LoadingContext, OptionContext } from './ItemContex';
 
 const {Option} = Select;
 
@@ -96,7 +97,7 @@ const CollectionCreateForm: React.FC<CollectionCreateFormProps> = ({
               labelInValue
               allowClear
             >
-              {options.jobOptions.map((option: Job) => (
+              {options.jobData?.map((option: Job) => (
                 <Option key={option.id} value={option.jobType}>{option.jobType}</Option>
               ))}
             </Select>
@@ -109,7 +110,7 @@ const CollectionCreateForm: React.FC<CollectionCreateFormProps> = ({
               labelInValue
               allowClear
             >
-              {options.cityOptions.map((option: City) => (
+              {options.cityData?.map((option: City) => (
                 <Option key={option.id} value={option.cityName}>{option.cityName}</Option>
               ))}
             </Select>
@@ -121,12 +122,6 @@ const CollectionCreateForm: React.FC<CollectionCreateFormProps> = ({
       </Modal>
     );
 };
-
-interface ModalFormProp {
-  data: any,
-  options: any,
-  onShow: (data: any) => void,
-}
 
 const createUser = async(data: Users) => {
   const res = await fetch(`https://mock-api.dev.apps.xplat.fis.com.vn/users/`, {
@@ -143,8 +138,11 @@ const createUser = async(data: Users) => {
   return res.json()
 }
 
-const ModalForm: React.FC<ModalFormProp> = ({data, options, onShow}) => {
+const ModalForm: React.FC = () => {
     const [open, setOpen] = useState(false);
+    const [data, setData] = useContext(DataContext);
+    const options = useContext(OptionContext);
+    const loading = useContext(LoadingContext);
 
     const normalizeValue =  (values: any) => {
       const currentDate = new Date().toISOString().substring(0, 10);
@@ -171,12 +169,13 @@ const ModalForm: React.FC<ModalFormProp> = ({data, options, onShow}) => {
 
     const onCreate = async (values: any) => {
       normalizeValue(values);
-      onShow([...data, values]);
-      await createUser(values); 
+      setData([...data, values]);
+      //await createUser(values); 
       setOpen(false);
     };
 
     return (
+        !loading &&
         <div>
             <Button
                 type="primary"

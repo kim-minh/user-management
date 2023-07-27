@@ -1,5 +1,6 @@
-import { Form, Input, InputNumber, Popconfirm, Table, Typography, Select } from 'antd';
-import { useState } from 'react';
+import { Form, Input, Popconfirm, Table, Typography, Select } from 'antd';
+import { useState, useContext } from 'react';
+import { DataContext, LoadingContext, OptionContext } from './ItemContex';
 import { Users, Job, City } from './DataInterface';
 import Image from 'next/image';
 
@@ -19,14 +20,11 @@ const EditableCell: React.FC<EditableCellProps> = ({
   editing,
   dataIndex,
   title,
-  inputType,
   record,
   index,
   children,
   ...restProps
 }) => {
-  const inputNode = inputType === 'number' ? <InputNumber style={{width: 120}} /> : <Input.TextArea style={{width: 120}} autoSize/>;
-
   return (
     <td {...restProps}>
       {editing ? (
@@ -40,7 +38,7 @@ const EditableCell: React.FC<EditableCellProps> = ({
             },
           ]}
         >
-          {inputNode}
+          <Input.TextArea style={{width: 120}} autoSize/>
         </Form.Item>
       ) : (
         children
@@ -49,15 +47,12 @@ const EditableCell: React.FC<EditableCellProps> = ({
   );
 };
 
-interface EditableTableProps {
-  originData: Users[],
-  options: any,
-  setData: (data: any) => void,
-  reloadPage: () => void,
-}
-
-const EditableTable: React.FC<EditableTableProps> = ({originData, options, setData, reloadPage}) => {
+const EditableTable: React.FC = () => {
   const [form] = Form.useForm();
+  const [data, setData] = useContext(DataContext);
+  const options = useContext(OptionContext);
+  const loading = useContext(LoadingContext);
+
   const [editingKey, setEditingKey] = useState(-1);
 
   const isEditing = (record: Users) => record.id === editingKey;
@@ -67,11 +62,25 @@ const EditableTable: React.FC<EditableTableProps> = ({originData, options, setDa
     setEditingKey(record.id);
   };
 
-  const deleteRow = (key: React.Key) => {
-    const index = originData.findIndex((item) => key === item.id);
-    const newData = originData.filter((item) => item.id !== key);
+  const deleteUser = async(id: number) => {
+    const res = await fetch(`https://mock-api.dev.apps.xplat.fis.com.vn/users/${id}`, {
+      method: 'DELETE',
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+
+    if (!res.ok) {
+      throw new Error('Failed to fetch data')
+    }
+    return res.json()
+  }
+
+  const deleteRow = async(key: React.Key) => {
+    const index = data.findIndex((item: any) => key === item.id);
+    const newData = data.filter((item: any) => item.id !== key);
     setData(newData);
-    deleteUser(index)
+    //await deleteUser(index)
     setEditingKey(-1);
   }
 
@@ -94,25 +103,11 @@ const EditableTable: React.FC<EditableTableProps> = ({originData, options, setDa
     return res.json()
   }
 
-  const deleteUser = async(id: number) => {
-    const res = await fetch(`https://mock-api.dev.apps.xplat.fis.com.vn/users/${id}`, {
-      method: 'DELETE',
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
-
-    if (!res.ok) {
-      throw new Error('Failed to fetch data')
-    }
-    return res.json()
-  }
-
   const save = async (key: React.Key) => {
     try {
       const row = (await form.validateFields()) as any;
-      const newData = [...originData];
-      const index = originData.findIndex((item) => key === item.id);
+      const newData = [...data];
+      const index = data.findIndex((item: any) => key === item.id);
 
       if (index > -1) {
         if (row.cityId.value !== undefined) {
@@ -144,8 +139,7 @@ const EditableTable: React.FC<EditableTableProps> = ({originData, options, setDa
         });
         setData(newData);
 
-        await updateUser(originData[index].id, row);
-        //reloadPage();
+        //await updateUser(originData[index].id, row);
       } else {
         
       }
@@ -207,7 +201,7 @@ const EditableTable: React.FC<EditableTableProps> = ({originData, options, setDa
           labelInValue
           style={{ width: 120 }}
         >
-          {options.jobOptions.map((option: Job) => (
+          {options.jobData?.map((option: Job) => (
             <Option key={option.id} value={option.id}>{option.jobType}</Option>
           ))}
         </Select>
@@ -223,7 +217,7 @@ const EditableTable: React.FC<EditableTableProps> = ({originData, options, setDa
           labelInValue
           style={{ width: 120 }}
         >
-          {options.cityOptions.map((option: City) => (
+          {options.cityData?.map((option: City) => (
             <Option key={option.id} value={option.id}>{option.cityName}</Option>
           ))}
         </Select>
@@ -271,7 +265,6 @@ const EditableTable: React.FC<EditableTableProps> = ({originData, options, setDa
       ...col,
       onCell: (record: Users) => ({
         record,
-        inputType: col.dataIndex === 'phoneNumber' ? 'number' : 'text',
         dataIndex: col.dataIndex,
         title: col.title,
         editing: isEditing(record),
@@ -288,8 +281,9 @@ const EditableTable: React.FC<EditableTableProps> = ({originData, options, setDa
           },
         }}
         rowKey={(record) => record.id}
+        loading={loading}
         bordered
-        dataSource={originData}
+        dataSource={data}
         columns={mergedColumns}
         scroll={{ x: 1300 }}
         rowClassName="editable-row"
